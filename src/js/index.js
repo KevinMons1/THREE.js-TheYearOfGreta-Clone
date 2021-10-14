@@ -1,6 +1,8 @@
 import * as THREE from "three"
 import * as dat from 'dat.gui'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import vertexPlaneShader from "../shaders/planes/vertex.glsl"
+import fragmentPlaneShader from "../shaders/planes/fragment.glsl"
 
 //------------------------
 // Global varibale
@@ -12,7 +14,7 @@ let initialRotationMeshY = 0.25
 
 let initialRotationGroupY = Math.PI * 0.75
 
-let scrollObjectI = []
+let scrollPlaneI = []
 
 //------------------------
 // Base
@@ -78,41 +80,37 @@ boxMesh.rotation.y = initialRotationMeshY
 scene.add(boxMesh)
 
 //------------------------
-// Object
+// Plane
 //------------------------
 
 // group
-const groupObject = new THREE.Group()
-scene.add(groupObject)
+const groupPlane = new THREE.Group()
+scene.add(groupPlane)
 
 // geometry
-const objectGeometry = new THREE.BoxGeometry(1.25, 0.75, 0.01)
+const planeGeometry = new THREE.PlaneGeometry(1.5, 1)
 
 // material
-const objectMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 })
+const planeMaterial = new THREE.ShaderMaterial({
+    side: THREE.DoubleSide,
+    vertexShader: vertexPlaneShader,
+    fragmentShader: fragmentPlaneShader,
+    uniforms: {
+        uTime: { value: 0.0 }
+    }
+})
 
-// Create object and memo those positions
+// Create planes
 for (let i = 0; i < 10; i++) {
-    const object = new THREE.Mesh(objectGeometry, objectMaterial)
-    
-    // const positionZ = Math.sin(i) * 2.5
-    // const positionX = Math.cos(i) * 2.5
-    // const rotationY = Math.PI * Math.abs(positionZ, positionX)
-    
-    // object.position.x = positionX
-    // object.position.z = positionZ
-    // object.position.y = i - 10
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial)
+    plane.position.y = i - 13
+    plane.rotation.z = - 1
 
-    // // object.rotation.y = - Math.abs(positionZ, positionX) * Math.PI * 0.5  // a garder car on se rapproche
-    // object.rotation.y = rotationY
-
-    object.position.y = i - 13
-
-    groupObject.add(object)
-    scrollObjectI.push(0)
+    scrollPlaneI.push(0)
+    groupPlane.add(plane)
 }
 
-groupObject.rotation.y = initialRotationGroupY
+groupPlane.rotation.y = initialRotationGroupY
 
 //------------------------
 // Renderer
@@ -131,7 +129,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 window.addEventListener("wheel", e => {
     const speed = 0.005
 
-    // Known down or up
+    // Known up or down
     if (e.deltaY < 0 && scrollI > 0) scrollI--
     else if (e.deltaY > 0) scrollI++
     
@@ -143,43 +141,65 @@ window.addEventListener("wheel", e => {
     boxMesh.rotation.y = (initialRotationMeshY) - scrollI * 0.01
 
     // position
-    boxMesh.position.y = (initialPositionMeshY) - scrollI * (speed * 2.5)
-    boxMesh.position.z = scrollI * speed 
+    boxMesh.position.y = (initialPositionMeshY) - scrollI * (speed * 1.25)
+    boxMesh.position.z = scrollI * (speed * 0.5) 
 
     //------
-    // Update group of objects
+    // Update group of planes
     //------
 
-    // groupObject.rotation.y = (initialRotationGroupY) - (Math.sin(scrollI * 0.005) * Math.PI * 0.55) * 10
-    // groupObject.position.y = (scrollI * 0.08) 
-    groupObject.position.y = (scrollI * 0.04) 
+    groupPlane.position.y = (scrollI * 0.04) 
 
-    groupObject.children.forEach((child, index) => {
-        console.log(scrollI)
-        if (groupObject.position.y >= 0) {
-            if (scrollI >= (index + 1) * 25) {
-                if (e.deltaY < 0 && scrollI > 0)  scrollObjectI[index]--
-                else if (e.deltaY > 0)  scrollObjectI[index]++
+    // Animation each plane
+    for (let i = 0; i < groupPlane.children.length; i++) {
+        const _index = groupPlane.children.length - (i + 1) // Get index reverse
 
-                console.log(scrollObjectI[index])
+        // Start animation
+        if (groupPlane.position.y >= 0) {
+            // Start one plane when it position are good value
+            if (scrollI >= (i + 1) * 25) {
+    
+                // Know up or down
+                if (e.deltaY < 0 && scrollI > 0)  scrollPlaneI[i]--
+                else if (e.deltaY > 0)  scrollPlaneI[i]++
+    
+                // To visible
+                if (!groupPlane.children[_index].visible) {
+                    groupPlane.children[_index].visible = true
+                }
 
-                const _index = groupObject.children.length - (index + 1)
-                groupObject.children[_index].position.z = Math.sin(scrollObjectI[index] * 0.05) * Math.PI * 0.6
-                groupObject.children[_index].position.x = Math.cos(scrollObjectI[index] * 0.05) * Math.PI * 0.6
-                groupObject.children[_index].rotation.y = Math.sin(scrollObjectI[index] * 0.007) * Math.PI * 0.5
+                // Apply animation according to your scrollPlaneI[i]
+                groupPlane.children[_index].position.z = Math.sin(scrollPlaneI[i] * 0.05) * Math.PI * 0.8
+                groupPlane.children[_index].position.x = Math.cos(scrollPlaneI[i] * 0.05) * Math.PI * 0.8
+                groupPlane.children[_index].rotation.y = Math.sin(scrollPlaneI[i] * 0.007) * Math.PI * 0.5
+
+                if (groupPlane.children[_index].position.x <= 0) {
+                    if (e.deltaY < 0 && scrollI > 0) {
+                        groupPlane.children[_index].rotation.z -= Math.PI * 0.0065
+                    } else if (e.deltaY > 0) {
+                        groupPlane.children[_index].rotation.z += Math.PI * 0.0065
+                    }
+                }
+
+            } else {
+                // To hidden
+                if (groupPlane.children[_index].visible) {
+                    groupPlane.children[_index].visible = false
+                }
             }
         }
-        // const _index = groupObject.children.length - (index + 1)
-        // groupObject.children[_index].position.z = Math.sin(scrollI * 0.05) * Math.PI * 0.6
-        // groupObject.children[_index].position.x = Math.cos(scrollI * 0.05) * Math.PI * 0.6
-        // groupObject.children[_index].rotation.y = Math.sin(scrollI * 0.007) * Math.PI * 0.5
-    })
+    }
 
 })
 
-
+const clock = new THREE.Clock()
 
 const init = () => {
+    let elapsedTime = clock.getElapsedTime()
+    
+    // Update shaders
+    planeMaterial.uniforms.uTime.value = elapsedTime
+
     // Update controls
     controls.update()
 
