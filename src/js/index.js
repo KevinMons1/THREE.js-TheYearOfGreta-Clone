@@ -4,6 +4,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from "three/examples/jsm/loaders/gltfloader"
 import vertexPlaneShader from "../shaders/planes/vertex.glsl"
 import fragmentPlaneShader from "../shaders/planes/fragment.glsl"
+import vertexBackgroundShader from "../shaders/background/vertex.glsl"
+import fragmentBackgroundShader from "../shaders/background/fragment.glsl"
 
 //------------------------
 // Global varibale
@@ -33,6 +35,9 @@ const canvas = document.querySelector(".main-webgl")
 // scene
 const scene = new THREE.Scene()
 scene.background = new THREE.Color("#fff")
+
+// background scene
+const backgroundScene = new THREE.Scene()
 
 // sizes
 const sizesCanvas = {
@@ -106,6 +111,9 @@ const camera = new THREE.PerspectiveCamera(75, sizesCanvas.width / sizesCanvas.h
 camera.position.z = 4.5
 scene.add(camera)
 
+// background camera
+const backgroundCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 0)
+
 // Controls
 const controls = new OrbitControls(camera, canvas)
 controls.enableZoom = false
@@ -147,6 +155,19 @@ boxMesh.rotation.y = initialRotationMeshY
 boxMesh.position.z = 0
 
 scene.add(boxMesh)
+
+// mesh background
+const backgroundPlane = new THREE.PlaneBufferGeometry(2, 2)
+const backgroundMaterial = new THREE.ShaderMaterial({
+    vertexShader: vertexBackgroundShader,
+    fragmentShader: fragmentBackgroundShader,
+    uniforms: {
+        uScrollI: { value: scrollI },
+        uResoltion: { value: new THREE.Vector2(sizesCanvas.width, sizesCanvas.height) }
+    }
+})
+
+backgroundScene.add(new THREE.Mesh(backgroundPlane, backgroundMaterial))
 
 //------------------------
 // Plane
@@ -193,6 +214,7 @@ const renderer = new THREE.WebGLRenderer({
 })
 renderer.setSize(sizesCanvas.width, sizesCanvas.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.autoClear = false
 
 //------------------------
 // Animation
@@ -284,6 +306,7 @@ const init = () => {
     // Update shaders
     planeMaterial.uniforms.uTime.value = elapsedTime
     planeMaterial.uniforms.uScrollI.value = scrollI
+    backgroundMaterial.uniforms.uScrollI.value = scrollI
     planeMaterial.uniforms.uStartFloat.value = startFloat
 
     // Update controls
@@ -291,6 +314,7 @@ const init = () => {
 
     // Update renderer
     renderer.render(scene, camera)
+    renderer.render(backgroundScene, backgroundCamera)
 
     // Call this function
     window.requestAnimationFrame(init)
