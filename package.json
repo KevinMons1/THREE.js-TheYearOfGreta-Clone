@@ -9,13 +9,20 @@
   },
   "author": "",
   "license": "ISC",
+  "staticFiles": {
+    "staticPath": "public",
+    "watcherGlob": "**"
+  },
   "devDependencies": {
     "@parcel/transformer-glsl": "^2.0.0-rc.0",
+    "@parcel/transformer-image": "^2.0.0-rc.0",
     "@parcel/transformer-sass": "^2.0.0-rc.0",
-    "parcel": "^2.0.0-rc.0"
+    "parcel": "^2.0.0-rc.0",
+    "parcel-bundler": "^1.12.5"
   },
   "dependencies": {
     "dat.gui": "^0.7.7",
+    "parcel-plugin-static-files-copy": "^2.6.0",
     "three": "^0.133.1"
   }
 }
