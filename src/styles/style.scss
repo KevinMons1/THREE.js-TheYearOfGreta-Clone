@@ -2,15 +2,48 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
 }
 
 html, body {
     overflow: hidden;
 }
 
+a {
+    color: #fff;
+}
+
+// .title-video {
+//     position: absolute;
+//     z-index: 1;
+    
+//     p {
+//         color: #fff;
+//     }
+// }
+
 .webgl {
     position: fixed;
     top: 0;
     left: 0;
     outline: none;
+}
+
+h1 {
+    position: absolute;
+    margin: 25px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: bold;
+    z-index: 2;
+}
+
+footer {
+    p {
+        position: absolute;
+        bottom: 0;
+        margin: 25px;
+        color: #fff;
+        z-index: 2;
+    }
 }
