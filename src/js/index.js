@@ -16,25 +16,50 @@ import fragmentParticulesShader from "../shaders/particules/fragment.glsl"
 
 let scrollI = 0.0
 let initialPositionMeshY = -1
-let initialRotationMeshY = 0.25
-
-let initialRotationGroupY = Math.PI * 0.75
-
+let initialRotationMeshY = Math.PI * 1.25
 let scrollPlaneI = []
-
 let startFloat = false;
-
-let urlImage = [
-    "https://www.youtube.com/watch?v=87MPqPynrXc",
-    "https://www.youtube.com/watch?v=FX8rsh83bGk",
-    "https://www.youtube.com/watch?v=wxL8bVJhXCM",
-    "https://www.youtube.com/watch?v=Ey68aMOV9gc",
-    "https://www.youtube.com/watch?v=3vZsVKD8BQg",
-    "https://www.youtube.com/watch?v=7Zp66FhjlPU",
-    "https://www.youtube.com/watch?v=68vPtAE3cZE",
-    "https://www.youtube.com/watch?v=kocd_C2M9RU",
-    "https://www.youtube.com/watch?v=k21ONzrwVLY",
-    "https://www.youtube.com/watch?v=JucYYmeh_QY"
+let detailsImage = [
+    {
+        url: "https://www.youtube.com/watch?v=87MPqPynrXc",
+        name: "Transformation Dark Vador - Anakin devient Dark Vador"
+    },
+    {
+        url: "https://www.youtube.com/watch?v=FX8rsh83bGk",
+        name: "Arrivée Dark Vador Étoile de la Mort"
+    },
+    {
+        url: "https://www.youtube.com/watch?v=wxL8bVJhXCM",
+        name: "Darth Vader's rage"
+    },
+    {
+        url: "https://www.youtube.com/watch?v=Ey68aMOV9gc",
+        name: "VADER EPISODE 1: SHARDS OF THE PAST"
+    },
+    {
+        url: "https://www.youtube.com/watch?v=3vZsVKD8BQg",
+        name: "Je suis ton père!"
+    },
+    {
+        url: "https://www.youtube.com/watch?v=7Zp66FhjlPU",
+        name: "Darth Vader Goes Shopping"
+    },
+    {
+        url: "https://www.youtube.com/watch?v=68vPtAE3cZE",
+        name: "Votre manque de foi me consterne"
+    },
+    {
+        url: "https://www.youtube.com/watch?v=kocd_C2M9RU",
+        name: "LA SOUFFRANCE MÈNE AU CÔTÉ OBSCUR"
+    },
+    {
+        url: "https://www.youtube.com/watch?v=k21ONzrwVLY",
+        name: "Lord Vader: A Star Wars Story"
+    },
+    {
+        url: "https://www.youtube.com/watch?v=JucYYmeh_QY",
+        name: 'Dark vador "Hommage"'
+    }
 ]
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -75,6 +100,18 @@ window.addEventListener("resize", () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 
+// Raycaster
+const raycatser = new THREE.Raycaster()
+let currentIntersect = null
+
+// mouse move
+let mouse = new THREE.Vector2()
+
+window.addEventListener("mousemove", e => {
+    mouse.x = e.clientX / sizesCanvas.width * 2 - 1
+    mouse.y = e.clientY / sizesCanvas.height * 2 + 1
+})
+
 //-------------------------------------------------------------------------------------------------------------------
 // Loaders
 //-------------------------------------------------------------------------------------------------------------------
@@ -96,7 +133,7 @@ const images = [imagesLoad1, imagesLoad2, imagesLoad3, imagesLoad4, imagesLoad5,
 const gltfLoader = new GLTFLoader()
 let models = []
 
-// // Dark Vador
+// Dark Vador
 // gltfLoader.load(
 //     "models/Dark_vador/scene.gltf",
 //     (gltf) => {
@@ -111,11 +148,8 @@ let models = []
 //         {
 //             if(child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial)
 //             {
-//                 // child.material.envMap = environmentMap
 //                 child.material.envMapIntensity = debugObject.envMapIntensity
 //                 child.material.needsUpdate = true
-//                 child.castShadow = true
-//                 child.receiveShadow = true
 //             }
 //         })
 //     },
@@ -125,11 +159,11 @@ let models = []
 //     }
 // )
 
-// // Rock
+// Rock
 gltfLoader.load(
     "models/Rock/scene.gltf",
     (gltf) => {
-        gltf.scene.scale.set(3.5, 2, 3.5)
+        gltf.scene.scale.set(4, 2, 4)
         gltf.scene.position.y = initialPositionMeshY - 1.73
         gltf.scene.rotation.y = initialRotationMeshY
         gltf.scene.visible = false
@@ -141,11 +175,8 @@ gltfLoader.load(
         {
             if(child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial)
             {
-                // child.material.envMap = environmentMap
                 child.material.envMapIntensity = debugObject.envMapIntensity
                 child.material.needsUpdate = true
-                child.castShadow = true
-                child.receiveShadow = true
             }
         })
 
@@ -166,7 +197,9 @@ debugObject.envMapIntensity = 5
 
 // camera
 const camera = new THREE.PerspectiveCamera(75, sizesCanvas.width / sizesCanvas.height, 0.1, 100)
-camera.position.z = 4.5
+camera.position.x = -3.2
+camera.position.y = 0.3
+camera.position.z = -4.5
 scene.add(camera)
 
 // background camera
@@ -180,17 +213,25 @@ controls.enableZoom = false
 // Light
 //-------------------------------------------------------------------------------------------------------------------
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 2)
+const ambientLight = new THREE.AmbientLight(0xff0000, 1.5)
 scene.add(ambientLight)
 
-const pointLight = new THREE.PointLight(0xffffff, 10)
-pointLight.position.set(0, 3, 5)
+const pointLight = new THREE.PointLight(0xffffff, 15)
+pointLight.position.set(-5.5, 5.5, -5)
 scene.add(pointLight)
+
+const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.2)
+scene.add(pointLightHelper)
+
+gui.add(pointLight.position, "x").min(-10).max(10).step(0.01)
+gui.add(pointLight.position, "y").min(-10).max(10).step(0.01)
+gui.add(pointLight.position, "z").min(-10).max(10).step(0.01)
+gui.add(pointLight, "intensity").min(0).max(50).step(0.01).name("pointLight intensity")
+gui.add(ambientLight, "intensity").min(0).max(50).step(0.01).name("ambientLight intensity")
 
 //-------------------------------------------------------------------------------------------------------------------
 // Model
 //-------------------------------------------------------------------------------------------------------------------
-
 
 // mesh background
 const backgroundPlane = new THREE.PlaneBufferGeometry(2, 2)
@@ -215,7 +256,7 @@ const groupText = new THREE.Group()
 scene.add(groupPlane, groupText)
 
 // geometry
-const planeGeometry = new THREE.PlaneGeometry(1.5, 1, 32, 32)
+const planeGeometry = new THREE.PlaneGeometry(2, 1.25, 32, 32)
 const planesMaterial = []
 
 // Create planes
@@ -240,16 +281,13 @@ for (let i = 0; i < 10; i++) {
     scrollPlaneI.push(0)
     
     const newText = new Text()
-    newText.text = "Hello world"
-    newText.fontSize = 0.25
-    newText.position.y = plane.position.y
-    newText.rotation.z = - plane.rotation.z
+    newText.text = detailsImage[i].name
+    newText.fontSize = 0.1
+    newText.position.y = plane.position.y - 0.2
 
     groupText.add(newText)
     groupPlane.add(plane)
 }
-
-groupPlane.rotation.y = initialRotationGroupY
 
 //-------------------------------------------------------------------------------------------------------------------
 // Particules
@@ -265,7 +303,7 @@ for (let i = 0; i < particulesCount; i++) {
 
     particulesPositions[i3] = (Math.random() - 0.5) * 10
     particulesPositions[i3 + 1] = (Math.random() * 1.5) - 2
-    particulesPositions[i3 + 2] = ((Math.random() - 0.5) * 10) - 2.5
+    particulesPositions[i3 + 2] = ((Math.random() - 0.5) * 10) + 2.5
 
     particulesScales[i] = Math.random()
 }
@@ -326,8 +364,10 @@ const animationScroll = (e) => {
         
             // position
             if (index === 0) model.position.y = (initialPositionMeshY) - scrollI * (speed * 0.8)
-            else model.position.y = (initialPositionMeshY - 1.73) - scrollI * (speed * 0.8)
-            model.position.z = scrollI * (speed * 0.75) 
+            else if (index === 1) model.position.y = (initialPositionMeshY - 1.73) - scrollI * (speed * 0.8)
+
+            model.position.z = - scrollI * (speed * 0.75)
+            model.position.x = - scrollI * (speed * 0.75)
         })
     
         //------
@@ -351,24 +391,28 @@ const animationScroll = (e) => {
                     else if (e.deltaY > 0)  scrollPlaneI[i]++
         
                     // Apply animation according to your scrollPlaneI[i]
-                    groupPlane.children[_index].position.z = Math.sin(scrollPlaneI[i] * 0.05) * Math.PI * 0.8
-                    groupPlane.children[_index].position.x = Math.cos(scrollPlaneI[i] * 0.05) * Math.PI * 0.8
-                    groupPlane.children[_index].rotation.y = Math.sin(scrollPlaneI[i] * 0.007) * Math.PI * 0.5
+                    const positionZ = Math.sin(scrollPlaneI[i] * 0.05) * Math.PI * 1.15
+                    const positionX = Math.cos(scrollPlaneI[i] * 0.05) * Math.PI * 1.15
+                    const rotationY = Math.sin(scrollPlaneI[i] * 0.007) * Math.PI * 0.5
+                    const rotationZ = Math.PI * 0.0065
 
-                    console.log(groupPlane.children[9].position.x)
-                    console.log(groupText.children[9].position.x)
+                    groupPlane.children[_index].position.z = positionZ 
+                    groupPlane.children[_index].position.x = positionX
+                    groupPlane.children[_index].rotation.y = rotationY
 
-                    groupText.children[_index].position.z = Math.sin(scrollPlaneI[i] * 0.05) * Math.PI * 0.8
-                    groupText.children[_index].position.x = Math.cos(scrollPlaneI[i] * 0.05) * Math.PI * 0.8
-                    groupText.children[_index].rotation.y = Math.sin(scrollPlaneI[i] * 0.007) * Math.PI * 0.5
+                    groupText.children[_index].position.z = positionZ - 1.25
+                    groupText.children[_index].position.x = positionX + 1
+                    groupText.children[_index].rotation.y = rotationY + Math.PI * 1.5
+                    groupText.children[_index].rotation.x = - Math.PI
     
+                    // Know when object must rutrn to up or down for animation
                     if (groupPlane.children[_index].position.x <= 0) {
                         if (e.deltaY < 0 && scrollI > 0) {
-                            groupPlane.children[_index].rotation.z -= Math.PI * 0.0065
-                            groupText.children[_index].rotation.z -= Math.PI * 0.0065
+                            groupPlane.children[_index].rotation.z -= rotationZ
+                            groupText.children[_index].rotation.z = - groupPlane.children[_index].rotation.z + Math.PI
                         } else if (e.deltaY > 0) {
-                            groupPlane.children[_index].rotation.z += Math.PI * 0.0065
-                            groupText.children[_index].rotation.z += Math.PI * 0.0065
+                            groupPlane.children[_index].rotation.z += rotationZ
+                            groupText.children[_index].rotation.z = - groupPlane.children[_index].rotation.z + Math.PI 
                         }
                     }
                 }
@@ -383,6 +427,20 @@ const animationScroll = (e) => {
     }
 }
 
+window.addEventListener("click", e => {
+    // console.log(groupPlane.children)
+    if (currentIntersect) {
+        console.log("test1")
+        for (let i = 0; i < groupPlane.children.length; i++) {
+            if (groupPlane.children[i].uuid === currentIntersect.object.uuid) {
+                console.log(groupPlane.children[i].uuid, currentIntersect.object.uuid)
+                groupPlane.children[i].position.x = 21
+            }
+        }
+        // currentIntersect.object.scale.x = 4
+    }
+})
+
 const clock = new THREE.Clock()
 
 const init = () => {
@@ -396,11 +454,22 @@ const init = () => {
     backgroundMaterial.uniforms.uScrollI.value = scrollI
     particulesMaterial.uniforms.uTime.value = elapsedTime
 
-    // Update text
-    // texts.forEach(text => text.sync())
-
     // Update controls
     controls.update()
+
+    // Upadate raycaster
+    raycatser.setFromCamera(mouse, camera)
+    const intersects = raycatser.intersectObjects(groupPlane.children)
+
+    if (intersects.length) {
+        if (currentIntersect === null) {
+            console.log("mouse enter")
+            currentIntersect = intersects[0]
+        } else {
+            console.log("mouse leave");
+            currentIntersect = null
+        }
+    }
 
     // Update renderer
     renderer.render(scene, camera)
