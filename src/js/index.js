@@ -109,7 +109,9 @@ let mouse = new THREE.Vector2()
 
 window.addEventListener("mousemove", e => {
     mouse.x = e.clientX / sizesCanvas.width * 2 - 1
-    mouse.y = e.clientY / sizesCanvas.height * 2 + 1
+    mouse.y = - (e.clientY / sizesCanvas.height) * 2 + 1
+
+    // console.log(mouse)
 })
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -269,7 +271,8 @@ for (let i = 0; i < 10; i++) {
             uScrollI: { value: scrollI },
             uTexture: { value: images[i] },
             uStartFloat: { value: startFloat },
-            uTime: { value: 0.0 }
+            uTime: { value: 0.0 },
+            uTouch: { value: -1.0 }
         }
     }))
 
@@ -428,16 +431,22 @@ const animationScroll = (e) => {
 }
 
 window.addEventListener("click", e => {
-    // console.log(groupPlane.children)
     if (currentIntersect) {
-        console.log("test1")
         for (let i = 0; i < groupPlane.children.length; i++) {
-            if (groupPlane.children[i].uuid === currentIntersect.object.uuid) {
-                console.log(groupPlane.children[i].uuid, currentIntersect.object.uuid)
-                groupPlane.children[i].position.x = 21
+            if (groupPlane.children[i] === currentIntersect.object) {
+                groupPlane.children[i].position.x -= 0.3            
             }
         }
-        // currentIntersect.object.scale.x = 4
+    }
+})
+
+window.addEventListener("mousemove", e => {
+    if (currentIntersect) {
+        for (let i = 0; i < groupPlane.children.length; i++) {
+            if (groupPlane.children[i] === currentIntersect.object) {
+                groupPlane.children[i].material.uniforms.uTouch.value = 1                
+            }
+        }
     }
 })
 
@@ -461,13 +470,21 @@ const init = () => {
     raycatser.setFromCamera(mouse, camera)
     const intersects = raycatser.intersectObjects(groupPlane.children)
 
-    if (intersects.length) {
+    // black and white to colo animation with raycaster
+    if (intersects.length === 1) {
         if (currentIntersect === null) {
-            console.log("mouse enter")
             currentIntersect = intersects[0]
         } else {
-            console.log("mouse leave");
+            for (let i = 0; i < groupPlane.children.length; i++) {
+                if (groupPlane.children[i] === currentIntersect.object) {
+                    groupPlane.children[i].material.uniforms.uTouch.value = 1                
+                }
+            }
             currentIntersect = null
+        }
+    } else {
+        for (let i = 0; i < groupPlane.children.length; i++) {
+            groupPlane.children[i].material.uniforms.uTouch.value = - 1                
         }
     }
 

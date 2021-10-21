@@ -1,4 +1,5 @@
 uniform float uScrollI;
+uniform float uTime;
 
 varying vec2 vUv;
 
@@ -10,7 +11,4 @@ void main() {
     vec3 mixedColor = mix(color1, color2, strenght);
 
     gl_FragColor = vec4(mixedColor, 1.0);
-
-    // gl_FragColor = vec4(vec3(1.0), 1.0);
-
 }
