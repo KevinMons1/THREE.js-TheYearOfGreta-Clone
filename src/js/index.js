@@ -17,7 +17,6 @@ import fragmentParticulesShader from "../shaders/particules/fragment.glsl"
 let scrollI = 0.0
 let initialPositionMeshY = -1
 let initialRotationMeshY = Math.PI * 1.25
-let scrollPlaneI = []
 let startFloat = false;
 let detailsImage = [
     {
@@ -199,9 +198,9 @@ debugObject.envMapIntensity = 5
 
 // camera
 const camera = new THREE.PerspectiveCamera(75, sizesCanvas.width / sizesCanvas.height, 0.1, 100)
-camera.position.x = -3.2
-camera.position.y = 0.3
-camera.position.z = -4.5
+camera.position.x = 0
+camera.position.y = 0
+camera.position.z = - 5
 scene.add(camera)
 
 // background camera
@@ -276,20 +275,25 @@ for (let i = 0; i < 10; i++) {
         }
     }))
 
+    // Plane
     const plane = new THREE.Mesh(planeGeometry, planesMaterial[i])
-
-    plane.position.y = i - 13
-    plane.rotation.z = - 1
-
-    scrollPlaneI.push(0)
+    plane.position.y = i - 14.2
+    plane.position.x = - Math.cos(i) * Math.PI
+    plane.position.z = - Math.sin(i) * Math.PI
+    plane.lookAt(0, plane.position.y, 0)
     
+    groupPlane.add(plane)
+
+    // Text
     const newText = new Text()
     newText.text = detailsImage[i].name
     newText.fontSize = 0.1
-    newText.position.y = plane.position.y - 0.2
-
+    newText.position.y = plane.position.y
+    newText.position.x = plane.position.x
+    newText.position.z = plane.position.z
+    plane.lookAt(0, plane.position.y, 0)
+    
     groupText.add(newText)
-    groupPlane.add(plane)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -376,51 +380,77 @@ const animationScroll = (e) => {
         //------
         // Update group of planes
         //------
-    
-        groupPlane.position.y = (scrollI * 0.04) 
-        groupText.position.y = (scrollI * 0.04) 
-    
-        // Animation each plane
+        
         for (let i = 0; i < groupPlane.children.length; i++) {
-            const _index = groupPlane.children.length - (i + 1) // Get index reverse
-    
-            // Start animation
-            if (groupPlane.position.y >= 0) {
-                // Start one plane when it position are good value
-                if (scrollI >= (i + 1) * 25) {
-        
-                    // Know up or down
-                    if (e.deltaY < 0 && scrollI > 0)  scrollPlaneI[i]--
-                    else if (e.deltaY > 0)  scrollPlaneI[i]++
-        
-                    // Apply animation according to your scrollPlaneI[i]
-                    const positionZ = Math.sin(scrollPlaneI[i] * 0.05) * Math.PI * 1.15
-                    const positionX = Math.cos(scrollPlaneI[i] * 0.05) * Math.PI * 1.15
-                    const rotationY = Math.sin(scrollPlaneI[i] * 0.007) * Math.PI * 0.5
-                    const rotationZ = Math.PI * 0.0065
+            const plane = groupPlane.children[i]
+            const text = groupText.children[i]
 
-                    groupPlane.children[_index].position.z = positionZ 
-                    groupPlane.children[_index].position.x = positionX
-                    groupPlane.children[_index].rotation.y = rotationY
+            // Planes -------
+            // Position
+            plane.position.z = - Math.sin(i + 1 * scrollI * 0.05) * Math.PI
+            plane.position.x = - Math.cos(i + 1 * scrollI * 0.05) * Math.PI
+            plane.position.y = (i - 14.2) + (scrollI * 0.05)
 
-                    groupText.children[_index].position.z = positionZ - 1.25
-                    groupText.children[_index].position.x = positionX + 1
-                    groupText.children[_index].rotation.y = rotationY + Math.PI * 1.5
-                    groupText.children[_index].rotation.x = - Math.PI
-    
-                    // Know when object must rutrn to up or down for animation
-                    if (groupPlane.children[_index].position.x <= 0) {
-                        if (e.deltaY < 0 && scrollI > 0) {
-                            groupPlane.children[_index].rotation.z -= rotationZ
-                            groupText.children[_index].rotation.z = - groupPlane.children[_index].rotation.z + Math.PI
-                        } else if (e.deltaY > 0) {
-                            groupPlane.children[_index].rotation.z += rotationZ
-                            groupText.children[_index].rotation.z = - groupPlane.children[_index].rotation.z + Math.PI 
-                        }
-                    }
-                }
-            }
+            // Rotation
+            plane.lookAt(0, plane.position.y, 0)
+
+            // Text -------
+            // Position
+            text.position.z = plane.position.z - 0.5
+            text.position.x = plane.position.x
+            text.position.y = plane.position.y
+
+            console.log(plane.rotation.y)
+
+            // Rotation
+            text.lookAt(0, plane.position.y, 0) // y - 10
+            console.log(i, plane.position.z * Math.PI)
         }
+    
+        // groupPlane.position.y = (scrollI * 0.04) 
+        // groupText.position.y = (scrollI * 0.04) 
+    
+        // // Animation each plane
+        // for (let i = 0; i < groupPlane.children.length; i++) {
+        //     const _index = groupPlane.children.length - (i + 1) // Get index reverse
+    
+        //     // Start animation
+        //     if (groupPlane.position.y >= 0) {
+        //         // Start one plane when it position are good value
+        //         if (scrollI >= (i + 1) * 25) {
+        
+        //             // Know up or down
+        //             if (e.deltaY < 0 && scrollI > 0)  scrollPlaneI[i]--
+        //             else if (e.deltaY > 0)  scrollPlaneI[i]++
+        
+        //             // Apply animation according to your scrollPlaneI[i]
+        //             const positionZ = Math.sin(scrollPlaneI[i] * 0.05) * Math.PI * 1.15
+        //             const positionX = Math.cos(scrollPlaneI[i] * 0.05) * Math.PI * 1.15
+        //             const rotationY = Math.sin(scrollPlaneI[i] * 0.007) * Math.PI * 0.5
+        //             const rotationZ = Math.PI * 0.0065
+
+        //             groupPlane.children[_index].position.z = positionZ 
+        //             groupPlane.children[_index].position.x = positionX
+        //             groupPlane.children[_index].rotation.y = rotationY
+
+        //             groupText.children[_index].position.z = positionZ - 1.25
+        //             groupText.children[_index].position.x = positionX + 1
+        //             groupText.children[_index].rotation.y = rotationY + Math.PI * 1.5
+        //             groupText.children[_index].rotation.x = - Math.PI
+    
+        //             // Know when object must rutrn to up or down for animation
+        //             if (groupPlane.children[_index].position.x <= 0) {
+        //                 if (e.deltaY < 0 && scrollI > 0) {
+        //                     groupPlane.children[_index].rotation.z -= rotationZ
+        //                     groupText.children[_index].rotation.z = - groupPlane.children[_index].rotation.z + Math.PI
+        //                 } else if (e.deltaY > 0) {
+        //                     groupPlane.children[_index].rotation.z += rotationZ
+        //                     groupText.children[_index].rotation.z = - groupPlane.children[_index].rotation.z + Math.PI 
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     
         // Known when user stop scroll
         isScrolling = setTimeout(() => {
@@ -430,15 +460,15 @@ const animationScroll = (e) => {
     }
 }
 
-window.addEventListener("click", e => {
-    if (currentIntersect) {
-        for (let i = 0; i < groupPlane.children.length; i++) {
-            if (groupPlane.children[i] === currentIntersect.object) {
-                groupPlane.children[i].position.x -= 0.3            
-            }
-        }
-    }
-})
+// window.addEventListener("click", e => {
+//     if (currentIntersect) {
+//         for (let i = 0; i < groupPlane.children.length; i++) {
+//             if (groupPlane.children[i] === currentIntersect.object) {
+//                 groupPlane.children[i].position.x -= 0.3            
+//             }
+//         }
+//     }
+// })
 
 window.addEventListener("mousemove", e => {
     if (currentIntersect) {

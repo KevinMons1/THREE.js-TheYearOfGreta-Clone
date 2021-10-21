@@ -14,13 +14,10 @@ void main() {
     float strength = distance(vUv, vec2(1.0)) + 1.0;
     
     // strength -= sin(uTouch * uTime * 2.0) * 3.0;
-    strength = - uTouch;
+    strength -= abs(sin(uTime));
 
     float gray = (texture.r + texture.g + texture.b) / 10.0;
+    float color = mix(strength, gray, uTouch);
 
-    texture.r *= 0.5 * step(strength * red, gray) + gray;
-    texture.g *= 0.5 * step(strength * green, gray) + gray;
-    texture.b *= 0.5 * step(strength * blue, gray) + gray;
-
-    gl_FragColor = vec4(vec3(texture * 1.25), 1.0);
+    gl_FragColor = vec4(vec3(texture), 1.0);
 }
