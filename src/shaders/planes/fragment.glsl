@@ -6,18 +6,12 @@ varying vec2 vUv;
 
 void main() {
     vec4 texture = texture2D(uTexture, vUv);
+    vec3 gray = vec3((texture.r + texture.g + texture.b) * 0.3);
 
-    float red = texture.r;
-    float green = texture.g;
-    float blue = texture.b;
+    float strength = distance(vUv, vec2(0.5));
+    strength -= - sin(uTouch - 0.5) * 2.0;
 
-    float strength = distance(vUv, vec2(1.0)) + 1.0;
-    
-    // strength -= sin(uTouch * uTime * 2.0) * 3.0;
-    strength -= abs(sin(uTime));
+    vec3 color = mix(gray.rgb, texture.rgb, smoothstep(strength, strength - 0.1, uTouch));
 
-    float gray = (texture.r + texture.g + texture.b) / 10.0;
-    float color = mix(strength, gray, uTouch);
-
-    gl_FragColor = vec4(vec3(texture), 1.0);
+    gl_FragColor = vec4(color, 1.0);
 }

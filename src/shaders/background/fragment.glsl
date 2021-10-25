@@ -3,12 +3,47 @@ uniform float uTime;
 
 varying vec2 vUv;
 
-void main() {
-    float strenght = 0.4 + distance(vUv, vec2(uScrollI * 0.00115));
+// 2D Random
+float random (in vec2 st) {
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))
+                 * 43758.5453123);
+}
 
-    vec3 color1 = vec3(0.5412, 0.1059, 0.1059);
-    vec3 color2 = vec3(0.1216, 0.0039, 0.0039);
-    vec3 mixedColor = mix(color1, color2, strenght);
+// 2D Noise based on Morgan McGuire @morgan3d
+// https://www.shadertoy.com/view/4dS3Wd
+float noise (in vec2 st) {
+    vec2 i = floor(st);
+    vec2 f = fract(st);
+
+    // Four corners in 2D of a tile
+    float a = random(i);
+    float b = random(i + vec2(1.0, 0.0));
+    float c = random(i + vec2(0.0, 1.0));
+    float d = random(i + vec2(1.0, 1.0));
+
+    // Smooth Interpolation
+
+    // Cubic Hermine Curve.  Same as SmoothStep()
+    vec2 u = f*f*(3.0-2.0*f);
+    // u = smoothstep(0.,1.,f);
+
+    // Mix 4 coorners percentages
+    return mix(a, b, u.x) +
+            (c - a)* u.y * (1.0 - u.x) +
+            (d - b) * u.x * u.y;
+}
+
+void main() {
+    vec2 pos = vec2(vec2(vUv) * 2.0);
+    pos += sin(uScrollI * 0.007);
+
+    float strength = noise(pos * 2.0);
+
+    vec3 color1 = vec3(0.4118, 0.0039, 0.0039);
+    vec3 color2 = vec3(0.2745, 0.0, 0.0);
+
+    vec3 mixedColor = mix(color1, color2, strength);
 
     gl_FragColor = vec4(mixedColor, 1.0);
 }

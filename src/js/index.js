@@ -1,8 +1,8 @@
 import * as THREE from "three"
-import * as dat from 'dat.gui'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from "three/examples/jsm/loaders/gltfloader"
-import {Text} from 'troika-three-text'
+import { Text } from 'troika-three-text'
+import { gsap, Power1 } from "gsap"
 import vertexPlaneShader from "../shaders/planes/vertex.glsl"
 import fragmentPlaneShader from "../shaders/planes/fragment.glsl"
 import vertexBackgroundShader from "../shaders/background/vertex.glsl"
@@ -14,18 +14,36 @@ import fragmentParticulesShader from "../shaders/particules/fragment.glsl"
 // Global varibale
 //-------------------------------------------------------------------------------------------------------------------
 
+const player = document.querySelector(".player")
+const playerClose = document.querySelector(".player-close")
+const playerSource = document.querySelector(".player-source")
+const counterLoading = document.querySelector(".counterLoading")
+const header = document.querySelector("header")
+const h1 = document.querySelector("h1")
+const footer = document.querySelector("footer")
+const loading = document.querySelector(".loading")
+let touchValue = 0.0
+let videoLook = false
 let scrollI = 0.0
 let initialPositionMeshY = -1
-let initialRotationMeshY = Math.PI * 1.25
-let startFloat = false;
+let initialRotationMeshY = Math.PI * 0.9
+let planeClickedIndex = -1
+let lastPosition = {
+    px: null,
+    py: null,
+    pz: null,
+    rx: null,
+    ry: null,
+    rz: null
+}
 let detailsImage = [
     {
         url: "https://www.youtube.com/watch?v=87MPqPynrXc",
-        name: "Transformation Dark Vador - Anakin devient Dark Vador"
+        name: "Transformation Dark Vador\n - Anakin devient Dark Vador"
     },
     {
         url: "https://www.youtube.com/watch?v=FX8rsh83bGk",
-        name: "Arrivée Dark Vador Étoile de la Mort"
+        name: "Arrivée Dark Vador\n Étoile de la Mort"
     },
     {
         url: "https://www.youtube.com/watch?v=wxL8bVJhXCM",
@@ -33,7 +51,7 @@ let detailsImage = [
     },
     {
         url: "https://www.youtube.com/watch?v=Ey68aMOV9gc",
-        name: "VADER EPISODE 1: SHARDS OF THE PAST"
+        name: "VADER EPISODE 1: SHARDS\n OF THE PAST"
     },
     {
         url: "https://www.youtube.com/watch?v=3vZsVKD8BQg",
@@ -45,15 +63,15 @@ let detailsImage = [
     },
     {
         url: "https://www.youtube.com/watch?v=68vPtAE3cZE",
-        name: "Votre manque de foi me consterne"
+        name: "Votre manque de foi\n me consterne"
     },
     {
         url: "https://www.youtube.com/watch?v=kocd_C2M9RU",
-        name: "LA SOUFFRANCE MÈNE AU CÔTÉ OBSCUR"
+        name: "LA SOUFFRANCE MÈNE\n AU CÔTÉ OBSCUR"
     },
     {
         url: "https://www.youtube.com/watch?v=k21ONzrwVLY",
-        name: "Lord Vader: A Star Wars Story"
+        name: "Lord Vader: A Star\n Wars Story"
     },
     {
         url: "https://www.youtube.com/watch?v=JucYYmeh_QY",
@@ -67,7 +85,6 @@ let detailsImage = [
 
 // Debug
 const debugObject = {}
-const gui = new dat.GUI()
 
 // canvas
 const canvas = document.querySelector(".main-webgl")
@@ -103,21 +120,83 @@ window.addEventListener("resize", () => {
 const raycatser = new THREE.Raycaster()
 let currentIntersect = null
 
-// mouse move
+// Mouse move
 let mouse = new THREE.Vector2()
 
 window.addEventListener("mousemove", e => {
     mouse.x = e.clientX / sizesCanvas.width * 2 - 1
     mouse.y = - (e.clientY / sizesCanvas.height) * 2 + 1
+})
 
-    // console.log(mouse)
+// Audio
+
+const music = new Audio("sounds/music.mp3")
+music.volume = 0.05
+
+const respiration = new Audio("sounds/respiration.mp3")
+respiration.volume = 0.01
+
+music.addEventListener("canplaythrough", () => {
+    // music.play()
+    // respiration.play()
 })
 
 //-------------------------------------------------------------------------------------------------------------------
 // Loaders
 //-------------------------------------------------------------------------------------------------------------------
 
-const textureLoader = new THREE.TextureLoader()
+const loadingManager = new THREE.LoadingManager(
+    // Loaded
+    () => {
+        window.setTimeout(() => {
+            gsap.to(header, 0.5, {
+                top: 10,
+                left: 10,
+                transform: "translate(0, 0)",
+                ease: Power1.easeIn
+            })
+
+            gsap.to(h1, 0.5, {
+                fontSize: 25,
+                top: 10,
+                left: 10,
+                transform: "translate(0, 0)",
+                width: 150,
+                ease: Power1.easeIn
+            })
+
+            gsap.to(footer, 0.5, {
+                delay: 0.4,
+                opacity: 1,
+                ease: Power1.easeIn
+            })
+
+            gsap.to(footer, 0.5, {
+                delay: 0.4,
+                opacity: 1,
+                ease: Power1.easeIn
+            })
+
+            gsap.to(loading, 0.5, {
+                delay: 0.4,
+                opacity: 0,
+                ease: Power1.easeIn
+            })
+
+            setTimeout(() => {
+                loading.style.visibility = "hidden"
+            }, 900);
+        }, 50)
+    },
+    (itemUrl, itemsLoaded, itemsTotal) => {
+        const progressRatio = itemsLoaded / itemsTotal
+
+        counterLoading.innerHTML = `${(progressRatio * 100).toFixed(0)}%`
+        header.style.width = `${(progressRatio * 550).toFixed(0)}px`
+    }
+)
+
+const textureLoader = new THREE.TextureLoader(loadingManager)
 
 const imagesLoad1 = textureLoader.load("./images/img1.jpg")
 const imagesLoad2 = textureLoader.load("./images/img2.jpg")
@@ -131,7 +210,7 @@ const imagesLoad9 = textureLoader.load("./images/img9.jpg")
 const imagesLoad10 = textureLoader.load("./images/img10.jpg")
 const images = [imagesLoad1, imagesLoad2, imagesLoad3, imagesLoad4, imagesLoad5, imagesLoad6, imagesLoad7, imagesLoad8, imagesLoad9, imagesLoad10]
 
-const gltfLoader = new GLTFLoader()
+const gltfLoader = new GLTFLoader(loadingManager)
 let models = []
 
 // Dark Vador
@@ -164,7 +243,7 @@ let models = []
 gltfLoader.load(
     "models/Rock/scene.gltf",
     (gltf) => {
-        gltf.scene.scale.set(4, 2, 4)
+        gltf.scene.scale.set(2.5, 2, 2.5)
         gltf.scene.position.y = initialPositionMeshY - 1.73
         gltf.scene.rotation.y = initialRotationMeshY
         gltf.scene.visible = false
@@ -221,15 +300,6 @@ const pointLight = new THREE.PointLight(0xffffff, 15)
 pointLight.position.set(-5.5, 5.5, -5)
 scene.add(pointLight)
 
-const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.2)
-scene.add(pointLightHelper)
-
-gui.add(pointLight.position, "x").min(-10).max(10).step(0.01)
-gui.add(pointLight.position, "y").min(-10).max(10).step(0.01)
-gui.add(pointLight.position, "z").min(-10).max(10).step(0.01)
-gui.add(pointLight, "intensity").min(0).max(50).step(0.01).name("pointLight intensity")
-gui.add(ambientLight, "intensity").min(0).max(50).step(0.01).name("ambientLight intensity")
-
 //-------------------------------------------------------------------------------------------------------------------
 // Model
 //-------------------------------------------------------------------------------------------------------------------
@@ -241,7 +311,8 @@ const backgroundMaterial = new THREE.ShaderMaterial({
     fragmentShader: fragmentBackgroundShader,
     uniforms: {
         uScrollI: { value: scrollI },
-        uResoltion: { value: new THREE.Vector2(sizesCanvas.width, sizesCanvas.height) }
+        uResoltion: { value: new THREE.Vector2(sizesCanvas.width, sizesCanvas.height) },
+        uTime: { value: 0.0 }
     }
 })
 
@@ -269,9 +340,8 @@ for (let i = 0; i < 10; i++) {
         uniforms: {
             uScrollI: { value: scrollI },
             uTexture: { value: images[i] },
-            uStartFloat: { value: startFloat },
             uTime: { value: 0.0 },
-            uTouch: { value: -1.0 }
+            uTouch: { value: touchValue }
         }
     }))
 
@@ -291,8 +361,7 @@ for (let i = 0; i < 10; i++) {
     newText.position.y = plane.position.y
     newText.position.x = plane.position.x
     newText.position.z = plane.position.z
-    plane.lookAt(0, plane.position.y, 0)
-    
+        
     groupText.add(newText)
 }
 
@@ -347,150 +416,195 @@ renderer.autoClear = false
 // Animation
 //-------------------------------------------------------------------------------------------------------------------
 
-let isScrolling
-
 const animationScroll = (e) => {
-
-    // Known up or down
-    if (e.deltaY < 0 && scrollI > 0) scrollI--
-
-    if (scrollI <= 435 && scrollI >= 0) {
-        if (e.deltaY > 0) scrollI++
-        const speed = 0.005
+    if (videoLook === false) {
+        // Known up or down
+        if (e.deltaY < 0 && scrollI > 0) scrollI--
     
-        window.clearTimeout( isScrolling )
-        if (!startFloat) startFloat = true
-       
-        //------
-        // Update mesh
-        //------
-    
-        models.forEach((model, index) => {
-            // rotation
-            model.rotation.y = (initialRotationMeshY) - scrollI * 0.015
+        if (scrollI <= 435 && scrollI >= 0 && models.length) {
+            if (e.deltaY > 0) scrollI++
+            const speed = 0.005
         
-            // position
-            if (index === 0) model.position.y = (initialPositionMeshY) - scrollI * (speed * 0.8)
-            else if (index === 1) model.position.y = (initialPositionMeshY - 1.73) - scrollI * (speed * 0.8)
-
-            model.position.z = - scrollI * (speed * 0.75)
-            model.position.x = - scrollI * (speed * 0.75)
-        })
-    
-        //------
-        // Update group of planes
-        //------
+            //------
+            // Update mesh
+            //------
         
-        for (let i = 0; i < groupPlane.children.length; i++) {
-            const plane = groupPlane.children[i]
-            const text = groupText.children[i]
-
-            // Planes -------
-            // Position
-            plane.position.z = - Math.sin(i + 1 * scrollI * 0.05) * Math.PI
-            plane.position.x = - Math.cos(i + 1 * scrollI * 0.05) * Math.PI
-            plane.position.y = (i - 14.2) + (scrollI * 0.05)
-
-            // Rotation
-            plane.lookAt(0, plane.position.y, 0)
-
-            // Text -------
-            // Position
-            text.position.z = plane.position.z - 0.5
-            text.position.x = plane.position.x
-            text.position.y = plane.position.y
-
-            console.log(plane.rotation.y)
-
-            // Rotation
-            text.lookAt(0, plane.position.y, 0) // y - 10
-            console.log(i, plane.position.z * Math.PI)
+            models.forEach((model, index) => {
+                // rotation
+                model.rotation.y = (initialRotationMeshY) - scrollI * 0.01355 // End front of camera
+            
+                // position
+                if (index === 0) model.position.y = (initialPositionMeshY) - scrollI * (speed * 0.8)
+                else if (index === 1) model.position.y = (initialPositionMeshY - 1.73) - scrollI * (speed * 0.8)
+    
+                model.position.z = - scrollI * (speed * 0.75)
+            })
+        
+            //------
+            // Update group of planes
+            //------
+            
+            for (let i = 0; i < groupPlane.children.length; i++) {
+                const plane = groupPlane.children[i]
+                const text = groupText.children[i]
+    
+                // Planes -------
+                // Position
+                plane.position.z = - Math.sin(i + 1 * scrollI * (speed * 10)) * Math.PI
+                plane.position.x = - Math.cos(i + 1 * scrollI * (speed * 10)) * Math.PI
+                plane.position.y = (i - 14.2) + (scrollI * (speed * 10))
+    
+                // Rotation
+                plane.lookAt(0, plane.position.y, 0)
+    
+                // Text -------
+                // Position
+                text.position.z = plane.position.z - 0.5
+                text.position.x = plane.position.x
+                text.position.y = plane.position.y - 0.3
+    
+                // Rotation
+                text.lookAt(0, plane.position.y - 0.3, camera.position.z)
+            }
         }
-    
-        // groupPlane.position.y = (scrollI * 0.04) 
-        // groupText.position.y = (scrollI * 0.04) 
-    
-        // // Animation each plane
-        // for (let i = 0; i < groupPlane.children.length; i++) {
-        //     const _index = groupPlane.children.length - (i + 1) // Get index reverse
-    
-        //     // Start animation
-        //     if (groupPlane.position.y >= 0) {
-        //         // Start one plane when it position are good value
-        //         if (scrollI >= (i + 1) * 25) {
-        
-        //             // Know up or down
-        //             if (e.deltaY < 0 && scrollI > 0)  scrollPlaneI[i]--
-        //             else if (e.deltaY > 0)  scrollPlaneI[i]++
-        
-        //             // Apply animation according to your scrollPlaneI[i]
-        //             const positionZ = Math.sin(scrollPlaneI[i] * 0.05) * Math.PI * 1.15
-        //             const positionX = Math.cos(scrollPlaneI[i] * 0.05) * Math.PI * 1.15
-        //             const rotationY = Math.sin(scrollPlaneI[i] * 0.007) * Math.PI * 0.5
-        //             const rotationZ = Math.PI * 0.0065
-
-        //             groupPlane.children[_index].position.z = positionZ 
-        //             groupPlane.children[_index].position.x = positionX
-        //             groupPlane.children[_index].rotation.y = rotationY
-
-        //             groupText.children[_index].position.z = positionZ - 1.25
-        //             groupText.children[_index].position.x = positionX + 1
-        //             groupText.children[_index].rotation.y = rotationY + Math.PI * 1.5
-        //             groupText.children[_index].rotation.x = - Math.PI
-    
-        //             // Know when object must rutrn to up or down for animation
-        //             if (groupPlane.children[_index].position.x <= 0) {
-        //                 if (e.deltaY < 0 && scrollI > 0) {
-        //                     groupPlane.children[_index].rotation.z -= rotationZ
-        //                     groupText.children[_index].rotation.z = - groupPlane.children[_index].rotation.z + Math.PI
-        //                 } else if (e.deltaY > 0) {
-        //                     groupPlane.children[_index].rotation.z += rotationZ
-        //                     groupText.children[_index].rotation.z = - groupPlane.children[_index].rotation.z + Math.PI 
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-    
-        // Known when user stop scroll
-        isScrolling = setTimeout(() => {
-            console.log("stop scroll")
-            startFloat = false
-        }, 80);
     }
 }
 
-// window.addEventListener("click", e => {
-//     if (currentIntersect) {
-//         for (let i = 0; i < groupPlane.children.length; i++) {
-//             if (groupPlane.children[i] === currentIntersect.object) {
-//                 groupPlane.children[i].position.x -= 0.3            
-//             }
-//         }
-//     }
-// })
+function getVideoId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url?.match(regExp);
 
-window.addEventListener("mousemove", e => {
-    if (currentIntersect) {
+    return (match && match[2].length === 11)
+      ? match[2]
+      : null;
+}
+
+window.addEventListener("click", e => {
+    if (currentIntersect && videoLook === false) {
         for (let i = 0; i < groupPlane.children.length; i++) {
             if (groupPlane.children[i] === currentIntersect.object) {
-                groupPlane.children[i].material.uniforms.uTouch.value = 1                
+                planeClickedIndex = i
+                music.pause()
+                respiration.pause()
+
+                lastPosition = {
+                    px: groupPlane.children[i].position.x,
+                    py: groupPlane.children[i].position.y,
+                    pz: groupPlane.children[i].position.z,
+                    rx: groupPlane.children[i].rotation.x,
+                    ry: groupPlane.children[i].rotation.y,
+                    rz: groupPlane.children[i].rotation.z
+                }
+
+                gsap.to(groupPlane.children[i].position, 0.5, {
+                    z: camera.position.z + 0.5,
+                    x: camera.position.x,
+                    y: camera.position.y,
+                    ease: Power1.easeIn
+                })
+
+                gsap.to(groupPlane.children[i].rotation, 0.5, {
+                    z: 0,
+                    x: 0,
+                    y: 0,
+                    ease: Power1.easeIn
+                })
+
+                const videoId = getVideoId(detailsImage[i].url);
+                playerSource.src = "https://www.youtube.com/embed/" + videoId
+                
+                setTimeout(() => {
+                    player.style.visibility = "visible"
+
+                    gsap.to(player, 0.5, {
+                        opacity: 1,
+                        ease: Power1.easeIn
+                    }) 
+                }, 400);
+
+                videoLook = true
             }
         }
     }
 })
 
+playerClose.addEventListener("click", () => {
+    playerSource.src = ""
+    music.play()
+    respiration.play()
+
+    gsap.to(player, 0.5, {
+        opacity: 0,
+        ease: Power1.easeIn
+    }) 
+    player.style.visibility = "hidden"
+
+    gsap.to(groupPlane.children[planeClickedIndex].position, 0.5, {
+        x: lastPosition.px,
+        y: lastPosition.py,
+        z: lastPosition.pz,
+        ease: Power1.easeIn
+    }) 
+
+    gsap.to(groupPlane.children[planeClickedIndex].rotation, 0.5, {
+        x: lastPosition.rx,
+        y: lastPosition.ry,
+        z: lastPosition.rz,
+        ease: Power1.easeIn
+    }) 
+
+    planeClickedIndex = -1
+
+    setTimeout(() => {
+        videoLook = false
+    }, 500);
+})
+
+window.addEventListener("mousemove", e => {
+    if (videoLook === false) {
+        if (currentIntersect) {
+            for (let i = 0; i < groupPlane.children.length; i++) {
+                if (groupPlane.children[i] === currentIntersect.object) {
+                    groupPlane.children[i].material.uniforms.uTouch.value = 1                
+                }
+            }
+        }
+    }
+})
+
+
+// animation change touchValue
+let goal = 0
+
+const changeTouchValue = (index) => {
+    console.log(callChangeTouchValue)
+    const interval = setInterval(() => {
+        if (goal === 1) touchValue += 0.01
+        else if (goal === 0) touchValue -= 0.01
+
+        groupPlane.children[index].material.uniforms.uTouch.value = touchValue  
+
+        if (parseFloat(touchValue.toFixed(1)) === goal) {
+            clearInterval(interval)
+            goal = goal === 0 ? 1 : 0
+        }
+    }, 5);
+}
+
 const clock = new THREE.Clock()
+
+let callChangeTouchValue = 0
 
 const init = () => {
     const elapsedTime = clock.getElapsedTime()
-    
+        
     // Update shaders
     planesMaterial.forEach(plane => {
         plane.uniforms.uTime.value = elapsedTime
         plane.uniforms.uScrollI.value = scrollI
     })
     backgroundMaterial.uniforms.uScrollI.value = scrollI
+    backgroundMaterial.uniforms.uTime.value = elapsedTime
     particulesMaterial.uniforms.uTime.value = elapsedTime
 
     // Update controls
@@ -507,15 +621,20 @@ const init = () => {
         } else {
             for (let i = 0; i < groupPlane.children.length; i++) {
                 if (groupPlane.children[i] === currentIntersect.object) {
-                    groupPlane.children[i].material.uniforms.uTouch.value = 1                
+                    if (callChangeTouchValue === 0) changeTouchValue(i)
+                    callChangeTouchValue = 1
+                    document.body.style.cursor = "pointer"               
                 }
             }
             currentIntersect = null
         }
     } else {
         for (let i = 0; i < groupPlane.children.length; i++) {
-            groupPlane.children[i].material.uniforms.uTouch.value = - 1                
+            if (callChangeTouchValue === 1) changeTouchValue(i)
+            callChangeTouchValue = 0
+            document.body.style.cursor = "auto" 
         }
+        currentIntersect = null
     }
 
     // Update renderer
