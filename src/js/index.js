@@ -22,12 +22,15 @@ const header = document.querySelector("header")
 const h1 = document.querySelector("h1")
 const footer = document.querySelector("footer")
 const loading = document.querySelector(".loading")
-let touchValue = 0.0
+const started = document.querySelector(".started")
+const startedBtn = document.querySelector(".started-btn")
+let touchValue = 1
 let videoLook = false
 let scrollI = 0.0
 let initialPositionMeshY = -1
 let initialRotationMeshY = Math.PI * 0.9
 let planeClickedIndex = -1
+let isLoading = false
 let lastPosition = {
     px: null,
     py: null,
@@ -136,11 +139,6 @@ music.volume = 0.05
 const respiration = new Audio("sounds/respiration.mp3")
 respiration.volume = 0.01
 
-music.addEventListener("canplaythrough", () => {
-    // music.play()
-    // respiration.play()
-})
-
 //-------------------------------------------------------------------------------------------------------------------
 // Loaders
 //-------------------------------------------------------------------------------------------------------------------
@@ -177,15 +175,18 @@ const loadingManager = new THREE.LoadingManager(
                 ease: Power1.easeIn
             })
 
-            gsap.to(loading, 0.5, {
+            gsap.to(counterLoading, 0.5, {
                 delay: 0.4,
                 opacity: 0,
                 ease: Power1.easeIn
             })
 
-            setTimeout(() => {
-                loading.style.visibility = "hidden"
-            }, 900);
+            gsap.to(started, 0.5, {
+                delay: 0.9,
+                opacity: 1
+            })
+
+            startedBtn.addEventListener("click", () => continueAnimation())
         }, 50)
     },
     (itemUrl, itemsLoaded, itemsTotal) => {
@@ -195,6 +196,34 @@ const loadingManager = new THREE.LoadingManager(
         header.style.width = `${(progressRatio * 550).toFixed(0)}px`
     }
 )
+
+// Continue animation loading
+const continueAnimation = () => {
+    music.play()
+    respiration.play()
+
+    gsap.to(started, 0.5, {
+        opacity: 0
+    })
+
+    gsap.to(loading, 0.5, {
+        opacity: 0
+    })
+
+    gsap.from(camera.position, 1.5, {
+        x: 4.0,
+        z: - 8.5,
+        y: 3.0
+    })
+
+    setTimeout(() => {
+        loading.style.visibility = "hidden"
+        started.style.visibility = "hidden"
+        groupPlane.visible = true
+        groupText.visible = true
+        isLoading = true
+    }, 250);
+}
 
 const textureLoader = new THREE.TextureLoader(loadingManager)
 
@@ -214,30 +243,30 @@ const gltfLoader = new GLTFLoader(loadingManager)
 let models = []
 
 // Dark Vador
-// gltfLoader.load(
-//     "models/Dark_vador/scene.gltf",
-//     (gltf) => {
-//         gltf.scene.scale.set(5, 5, 5)
-//         gltf.scene.position.y = initialPositionMeshY
-//         gltf.scene.rotation.y = initialRotationMeshY
+gltfLoader.load(
+    "models/Dark_vador/scene.gltf",
+    (gltf) => {
+        gltf.scene.scale.set(5, 5, 5)
+        gltf.scene.position.y = initialPositionMeshY
+        gltf.scene.rotation.y = initialRotationMeshY
 
-//         scene.add(gltf.scene)
-//         models.push(gltf.scene)
+        scene.add(gltf.scene)
+        models.push(gltf.scene)
 
-//         scene.traverse((child) =>
-//         {
-//             if(child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial)
-//             {
-//                 child.material.envMapIntensity = debugObject.envMapIntensity
-//                 child.material.needsUpdate = true
-//             }
-//         })
-//     },
-//     undefined,
-//     (err) => {
-//         console.log(err)
-//     }
-// )
+        scene.traverse((child) =>
+        {
+            if(child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial)
+            {
+                child.material.envMapIntensity = debugObject.envMapIntensity
+                child.material.needsUpdate = true
+            }
+        })
+    },
+    undefined,
+    (err) => {
+        console.log(err)
+    }
+)
 
 // Rock
 gltfLoader.load(
@@ -246,7 +275,6 @@ gltfLoader.load(
         gltf.scene.scale.set(2.5, 2, 2.5)
         gltf.scene.position.y = initialPositionMeshY - 1.73
         gltf.scene.rotation.y = initialRotationMeshY
-        gltf.scene.visible = false
 
         scene.add(gltf.scene)
         models.push(gltf.scene)
@@ -287,6 +315,7 @@ const backgroundCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 0)
 
 // Controls
 const controls = new OrbitControls(camera, canvas)
+controls.enabled = false
 controls.enableZoom = false
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -325,6 +354,8 @@ backgroundScene.add(new THREE.Mesh(backgroundPlane, backgroundMaterial))
 // group
 const groupPlane = new THREE.Group()
 const groupText = new THREE.Group()
+groupPlane.visible = false
+groupText.visible = false
 scene.add(groupPlane, groupText)
 
 // geometry
@@ -417,7 +448,7 @@ renderer.autoClear = false
 //-------------------------------------------------------------------------------------------------------------------
 
 const animationScroll = (e) => {
-    if (videoLook === false) {
+    if (videoLook === false && isLoading) {
         // Known up or down
         if (e.deltaY < 0 && scrollI > 0) scrollI--
     
@@ -462,9 +493,9 @@ const animationScroll = (e) => {
                 text.position.z = plane.position.z - 0.5
                 text.position.x = plane.position.x
                 text.position.y = plane.position.y - 0.3
-    
+
                 // Rotation
-                text.lookAt(0, plane.position.y - 0.3, camera.position.z)
+                text.lookAt(plane.position.x * 2, plane.position.y - 0.3, plane.position.z * 2)
             }
         }
     }
@@ -480,7 +511,7 @@ function getVideoId(url) {
 }
 
 window.addEventListener("click", e => {
-    if (currentIntersect && videoLook === false) {
+    if (currentIntersect && videoLook === false && isLoading) {
         for (let i = 0; i < groupPlane.children.length; i++) {
             if (groupPlane.children[i] === currentIntersect.object) {
                 planeClickedIndex = i
@@ -560,40 +591,29 @@ playerClose.addEventListener("click", () => {
     }, 500);
 })
 
-window.addEventListener("mousemove", e => {
-    if (videoLook === false) {
-        if (currentIntersect) {
-            for (let i = 0; i < groupPlane.children.length; i++) {
-                if (groupPlane.children[i] === currentIntersect.object) {
-                    groupPlane.children[i].material.uniforms.uTouch.value = 1                
-                }
-            }
-        }
-    }
-})
-
-
-// animation change touchValue
-let goal = 0
+// Animation hover plane black and white to color
+let goalValue = 0
 
 const changeTouchValue = (index) => {
-    console.log(callChangeTouchValue)
-    const interval = setInterval(() => {
-        if (goal === 1) touchValue += 0.01
-        else if (goal === 0) touchValue -= 0.01
-
-        groupPlane.children[index].material.uniforms.uTouch.value = touchValue  
-
-        if (parseFloat(touchValue.toFixed(1)) === goal) {
-            clearInterval(interval)
-            goal = goal === 0 ? 1 : 0
-        }
-    }, 5);
+    if (index >= 0) {
+        const interval = setInterval(() => {
+            if (goalValue === 1) touchValue += 0.01
+            else if (goalValue === 0) touchValue -= 0.01
+    
+            groupPlane.children[index].material.uniforms.uTouch.value = touchValue
+    
+            if (parseFloat(touchValue.toFixed(1)) === goalValue) {
+                clearInterval(interval)
+                goalValue = goalValue === 0 ? 1 : 0
+            }
+        }, 7);
+    }
 }
 
 const clock = new THREE.Clock()
 
 let callChangeTouchValue = 0
+let touchI = - 1
 
 const init = () => {
     const elapsedTime = clock.getElapsedTime()
@@ -607,34 +627,36 @@ const init = () => {
     backgroundMaterial.uniforms.uTime.value = elapsedTime
     particulesMaterial.uniforms.uTime.value = elapsedTime
 
-    // Update controls
-    controls.update()
-
     // Upadate raycaster
     raycatser.setFromCamera(mouse, camera)
     const intersects = raycatser.intersectObjects(groupPlane.children)
 
     // black and white to colo animation with raycaster
-    if (intersects.length === 1) {
-        if (currentIntersect === null) {
-            currentIntersect = intersects[0]
-        } else {
-            for (let i = 0; i < groupPlane.children.length; i++) {
-                if (groupPlane.children[i] === currentIntersect.object) {
-                    if (callChangeTouchValue === 0) changeTouchValue(i)
-                    callChangeTouchValue = 1
-                    document.body.style.cursor = "pointer"               
+    if (isLoading) {
+        if (intersects.length === 1) {
+            if (currentIntersect === null) {
+                currentIntersect = intersects[0]
+            } else {
+                for (let i = 0; i < groupPlane.children.length; i++) {
+                    if (groupPlane.children[i] === currentIntersect.object) {
+                        if (callChangeTouchValue === 0) {
+                            touchI = i
+                            changeTouchValue(i)
+                            callChangeTouchValue = 1
+                            document.body.style.cursor = "pointer"               
+                        }
+                    }
                 }
             }
-            currentIntersect = null
+        } else {
+            if (callChangeTouchValue === 1 && touchI >= 0) {
+                changeTouchValue(touchI)
+                callChangeTouchValue = 0
+                document.body.style.cursor = "auto" 
+                currentIntersect = null
+                touchI = - 1
+            }
         }
-    } else {
-        for (let i = 0; i < groupPlane.children.length; i++) {
-            if (callChangeTouchValue === 1) changeTouchValue(i)
-            callChangeTouchValue = 0
-            document.body.style.cursor = "auto" 
-        }
-        currentIntersect = null
     }
 
     // Update renderer
