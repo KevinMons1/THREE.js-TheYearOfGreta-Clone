@@ -538,11 +538,9 @@ function getVideoId(url) {
 
 window.addEventListener("touchend", () => {
     handlePlane()
-    alert("Ca fonctionne !")
 })
 window.addEventListener("click", () => {
     handlePlane()
-    alert("test")
 })
 
 const handlePlane = () => {
