@@ -471,7 +471,7 @@ const animationScroll = (e, touchEvent, value, downOrUp) => {
 
     if (touchEvent) deltaY = value
     else deltaY = e.deltaY
-    
+
     if (videoLook === false && isLoading) {
         // Known up or down
         if (touchEvent && downOrUp === "down" && scrollI > 0) scrollI--
@@ -536,7 +536,10 @@ function getVideoId(url) {
       : null;
 }
 
-window.addEventListener("click", e => {
+window.addEventListener("touchend", () => handlePlane())
+window.addEventListener("click", () => handlePlane())
+
+const handlePlane = () => {
     if (currentIntersect && videoLook === false && isLoading) {
         for (let i = 0; i < groupPlane.children.length; i++) {
             if (groupPlane.children[i] === currentIntersect.object) {
@@ -583,7 +586,7 @@ window.addEventListener("click", e => {
             }
         }
     }
-})
+}
 
 playerClose.addEventListener("click", () => {
     playerSource.src = ""
