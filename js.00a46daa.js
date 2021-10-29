@@ -53866,7 +53866,8 @@ gltfLoader.load("models/Dark_vador/scene.gltf", function (gltf) {
   });
 }, undefined, function (err) {
   console.log(err);
-}); // Rock
+});
+var startTouch = 0; // Rock
 
 gltfLoader.load("models/Rock/scene.gltf", function (gltf) {
   gltf.scene.scale.set(2.5, 2, 2.5);
@@ -53879,9 +53880,23 @@ gltfLoader.load("models/Rock/scene.gltf", function (gltf) {
       child.material.envMapIntensity = debugObject.envMapIntensity;
       child.material.needsUpdate = true;
     }
-  }); // Animation
+  }); // Event Animation
 
-  window.addEventListener("wheel", function (e) {
+  if ("ontouchstart" in window) {
+    window.addEventListener('touchstart', function (e) {
+      startTouch = e.touches[0].clientY;
+    }, false);
+    window.addEventListener('touchmove', function (e) {
+      // animationScroll(e)
+      if (e.touches[0].clientY < startTouch) {
+        startTouch = e.touches[0].clientY;
+        animationScroll(e, true, startTouch, "up");
+      } else {
+        startTouch = e.touches[0].clientY;
+        animationScroll(e, true, startTouch, "down");
+      }
+    }, false);
+  } else window.addEventListener("wheel", function (e) {
     return animationScroll(e);
   }, false);
 }, undefined, function (err) {
@@ -54030,13 +54045,16 @@ renderer.autoClear = false; //--------------------------------------------------
 // Animation
 //-------------------------------------------------------------------------------------------------------------------
 
-var animationScroll = function animationScroll(e) {
+var animationScroll = function animationScroll(e, touchEvent, value, downOrUp) {
+  var deltaY;
+  if (touchEvent) deltaY = value;else deltaY = e.deltaY;
+
   if (videoLook === false && isLoading) {
     // Known up or down
-    if (e.deltaY < 0 && scrollI > 0) scrollI--;
+    if (touchEvent && downOrUp === "down" && scrollI > 0) scrollI--;else if (!touchEvent && deltaY < 0 && scrollI > 0) scrollI--;
 
-    if (scrollI <= 435 && scrollI >= 0 && models.length) {
-      if (e.deltaY > 0) scrollI++;
+    if (scrollI <= 435 && scrollI >= 0 && models.length === 2) {
+      if (touchEvent && downOrUp === "up") scrollI++;else if (!touchEvent && deltaY > 0) scrollI++;
       var speed = 0.005; //------
       // Update mesh
       //------
@@ -54255,7 +54273,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57751" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58281" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
