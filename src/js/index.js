@@ -268,6 +268,8 @@ gltfLoader.load(
     }
 )
 
+let startTouch = 0
+
 // Rock
 gltfLoader.load(
     "models/Rock/scene.gltf",
@@ -288,8 +290,25 @@ gltfLoader.load(
             }
         })
 
-        // Animation
-        window.addEventListener("wheel", (e) => animationScroll(e), false)
+        // Event Animation
+        if("ontouchstart" in window) {
+
+            window.addEventListener('touchstart', (e) => {
+                startTouch = e.touches[0].clientY
+            }, false)
+
+            window.addEventListener('touchmove', (e) => {
+                // animationScroll(e)
+                if (e.touches[0].clientY < startTouch) {
+                    startTouch = e.touches[0].clientY
+                    animationScroll(e, true, startTouch, "up")
+                } else {
+                    startTouch = e.touches[0].clientY
+                    animationScroll(e, true, startTouch, "down")
+                }
+            }, false)
+
+         } else window.addEventListener("wheel", (e) => animationScroll(e), false)
     },
     undefined,
     (err) => {
@@ -447,13 +466,20 @@ renderer.autoClear = false
 // Animation
 //-------------------------------------------------------------------------------------------------------------------
 
-const animationScroll = (e) => {
+const animationScroll = (e, touchEvent, value, downOrUp) => {
+    let deltaY
+
+    if (touchEvent) deltaY = value
+    else deltaY = e.deltaY
+    
     if (videoLook === false && isLoading) {
         // Known up or down
-        if (e.deltaY < 0 && scrollI > 0) scrollI--
+        if (touchEvent && downOrUp === "down" && scrollI > 0) scrollI--
+        else if (!touchEvent && deltaY < 0 && scrollI > 0) scrollI--
     
-        if (scrollI <= 435 && scrollI >= 0 && models.length) {
-            if (e.deltaY > 0) scrollI++
+        if (scrollI <= 435 && scrollI >= 0 && models.length === 2) {
+            if (touchEvent && downOrUp === "up") scrollI++
+            else if (!touchEvent && deltaY > 0) scrollI++
             const speed = 0.005
         
             //------
