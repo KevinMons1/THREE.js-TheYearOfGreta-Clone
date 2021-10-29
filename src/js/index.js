@@ -536,8 +536,14 @@ function getVideoId(url) {
       : null;
 }
 
-window.addEventListener("touchend", () => handlePlane())
-window.addEventListener("click", () => handlePlane())
+window.addEventListener("touchend", () => {
+    handlePlane()
+    alert("Ca fonctionne !")
+})
+window.addEventListener("click", () => {
+    handlePlane()
+    alert("test")
+})
 
 const handlePlane = () => {
     if (currentIntersect && videoLook === false && isLoading) {
