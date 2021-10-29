@@ -54099,7 +54099,14 @@ function getVideoId(url) {
   return match && match[2].length === 11 ? match[2] : null;
 }
 
-window.addEventListener("click", function (e) {
+window.addEventListener("touchend", function () {
+  return handlePlane();
+});
+window.addEventListener("click", function () {
+  return handlePlane();
+});
+
+var handlePlane = function handlePlane() {
   if (currentIntersect && videoLook === false && isLoading) {
     for (var _i3 = 0; _i3 < groupPlane.children.length; _i3++) {
       if (groupPlane.children[_i3] === currentIntersect.object) {
@@ -54143,7 +54150,8 @@ window.addEventListener("click", function (e) {
       }
     }
   }
-});
+};
+
 playerClose.addEventListener("click", function () {
   playerSource.src = "";
   music.play();
@@ -54273,7 +54281,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58281" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62719" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
