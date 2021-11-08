@@ -536,9 +536,6 @@ function getVideoId(url) {
       : null;
 }
 
-window.addEventListener("touchend", () => {
-    handlePlane()
-})
 window.addEventListener("click", () => {
     handlePlane()
 })
@@ -661,7 +658,7 @@ const init = () => {
     particulesMaterial.uniforms.uTime.value = elapsedTime
 
     // Upadate raycaster
-    raycatser.setFromCamera(mouse, camera)
+    if(!("ontouchstart" in window)) raycatser.setFromCamera(mouse, camera)
     const intersects = raycatser.intersectObjects(groupPlane.children)
 
     // black and white to colo animation with raycaster
