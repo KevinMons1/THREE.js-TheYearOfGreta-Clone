@@ -54099,9 +54099,6 @@ function getVideoId(url) {
   return match && match[2].length === 11 ? match[2] : null;
 }
 
-window.addEventListener("touchend", function () {
-  handlePlane();
-});
 window.addEventListener("click", function () {
   handlePlane();
 });
@@ -54215,7 +54212,7 @@ var init = function init() {
   backgroundMaterial.uniforms.uTime.value = elapsedTime;
   particulesMaterial.uniforms.uTime.value = elapsedTime; // Upadate raycaster
 
-  raycatser.setFromCamera(mouse, camera);
+  if (!("ontouchstart" in window)) raycatser.setFromCamera(mouse, camera);
   var intersects = raycatser.intersectObjects(groupPlane.children); // black and white to colo animation with raycaster
 
   if (isLoading) {
@@ -54281,7 +54278,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57248" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63116" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
